@@ -19,8 +19,8 @@ def main():
 
     # Seleccionar archivos
     uploaded_files = st.file_uploader(
-        "Choose images to create collage (solo pngs)",
-        type=["png"],
+        "Choose images to create collage",
+        type=["png", "jpg", "jpeg"],
         accept_multiple_files=True)
 
     # Validar número máximo de archivos
@@ -73,15 +73,21 @@ def generate_collage(images, fondo_color):
     Returns:
         np.ndarray: Imagen de collage generada.
     """
-    # Rotar cada imagen de forma aleatoria
-    rotated_images = [rotate(image, angle=np.random.randint(-30, 30)) for image
-                      in images]
 
-    # Redimensionar todas las imágenes a las mismas dimensiones
+    num_channels = max(image.shape[2] for image in images)
+    # Rotar cada imagen de forma aleatoria
+    rotated_images = []
+    for image in images:
+        canalized_image = np.ones(
+            (image.shape[0], image.shape[1], num_channels))
+        canalized_image[:image.shape[0], :image.shape[1], :image.shape[2]] = \
+            image / 255
+        rotated_images.append(
+            rotate(canalized_image, angle=np.random.randint(-30, 30)))
+
     area = sorted([(image.shape[0] * image.shape[1], image.shape) for image in
                    rotated_images])[0][0]
     resized_images = []
-
     # Calcular el tamaño optimizado para cada imagen
     for image in rotated_images:
         proportion = image.shape[0] / image.shape[1]
@@ -103,7 +109,7 @@ def generate_collage(images, fondo_color):
             # Añadir imagen en la parte inferior
             collage = combine_images_vertical(collage, resized_image)
 
-    # Color de fondo (en este caso, blanco)
+    # Color de fondo
     hex_color = fondo_color.lstrip('#')
 
     # Convertir el valor hexadecimal a RGB
@@ -116,7 +122,7 @@ def generate_collage(images, fondo_color):
     collage = np.where(collage[:, :, :3] == 0, fondo[:, :, :3],
                        collage[:, :, :3])
 
-    return collage
+    return np.clip(collage, 0., 1.)
 
 
 def combine_images_horizontal(image1, image2):
