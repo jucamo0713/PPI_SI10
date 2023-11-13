@@ -137,7 +137,7 @@ def combine_images_horizontal(image1, image2):
         image2 = add_padding(image2, diff, 0)
     elif diff < 0:
         diff = -diff
-        image1 = add_padding(image2, diff, 0)
+        image1 = add_padding(image1, diff, 0)
 
     # Concatenar imágenes horizontalmente
     collage = np.hstack((image1, image2))
