@@ -15,39 +15,41 @@ def main():
     """
     Función principal que muestra la interfaz de usuario para crear collages.
     """
+    # Título de la aplicación
     st.title("Collage Generator")
 
-    # Seleccionar archivos
+    # Seleccionar archivos de imagen desde el usuario
     uploaded_files = st.file_uploader(
         "Choose images to create collage",
         type=["png", "jpg", "jpeg"],
         accept_multiple_files=True)
 
-    # Validar número máximo de archivos
+    # Validar el número máximo de archivos cargados
     if uploaded_files is not None:
         if len(uploaded_files) > 5:
-            st.warning(f"Selecciona como máximo {5} archivos.")
+            st.warning(f"Select a maximum of {5} files.")
             uploaded_files = uploaded_files[:5]
 
     if uploaded_files:
+        # Sección de imágenes seleccionadas
         st.header("Selected Images")
 
-        # Leer y mostrar imágenes seleccionadas
+        # Leer y mostrar las imágenes seleccionadas
         images = [io.imread(file) for file in uploaded_files]
         st.image(images,
                  caption=[f"Image {i + 1}" for i in range(len(images))],
                  width=100)
 
-        # Color picker para el fondo
-        fondo_color = st.color_picker("Selecciona el color de fondo")
+        # Color picker para el fondo del collage
+        fondo_color = st.color_picker("Select background color")
         collage_button = st.button("Generate Collage")
 
-        # Generar collage al hacer clic en el botón
+        # Generar el collage al hacer clic en el botón correspondiente
         if collage_button:
             collage = generate_collage(images, fondo_color)
             st.session_state['collage'] = collage
 
-        # Mostrar collage generado y botón de descarga
+        # Mostrar el collage generado y el botón de descarga
         if 'collage' in st.session_state:
             st.header("Generated Collage")
             st.image(st.session_state['collage'],
@@ -58,7 +60,7 @@ def main():
             data = img_as_ubyte(st.session_state['collage'])
             io.imsave(buffer, data, type='png', format='png')
             buffer.seek(0)
-            st.download_button("Descargar", data=buffer,
+            st.download_button("Download", data=buffer,
                                file_name='collage.png', )
 
 
@@ -74,17 +76,23 @@ def generate_collage(images, fondo_color):
         np.ndarray: Imagen de collage generada.
     """
 
+    # Determinar el número máximo de canales de color entre las imágenes
     num_channels = max(image.shape[2] for image in images)
+
     # Rotar cada imagen de forma aleatoria
     rotated_images = []
     for image in images:
+        # Normalizar y agregar canales para imágenes con diferente número de
+        # canales
         canalized_image = np.ones(
             (image.shape[0], image.shape[1], num_channels))
         canalized_image[:image.shape[0], :image.shape[1], :image.shape[2]] = \
             image / 255
+        # Rotar la imagen y agregarla a la lista de imágenes rotadas
         rotated_images.append(
             rotate(canalized_image, angle=np.random.randint(-30, 30)))
 
+    # Calcular el área de cada imagen y seleccionar la más pequeña
     area = sorted([(image.shape[0] * image.shape[1], image.shape) for image in
                    rotated_images])[0][0]
     resized_images = []
@@ -96,7 +104,9 @@ def generate_collage(images, fondo_color):
         resized = transform.resize(np.array(image), result)
         resized_images.append(resized)
 
+    # Barajar aleatoriamente las imágenes redimensionadas
     np.random.shuffle(resized_images)
+    # Tomar la primera imagen como base del collage
     collage = resized_images[0]
 
     # Combinar imágenes para formar el collage
@@ -136,6 +146,7 @@ def combine_images_horizontal(image1, image2):
     Returns:
         np.ndarray: Imagen combinada.
     """
+    # Calcular la diferencia en altura entre las dos imágenes
     diff = image1.shape[0] - image2.shape[0]
 
     # Ajustar el tamaño de la imagen más pequeña
@@ -162,6 +173,7 @@ def combine_images_vertical(image1, image2):
     Returns:
         np.ndarray: Imagen combinada.
     """
+    # Calcular la diferencia en anchura entre las dos imágenes
     diff = image1.shape[1] - image2.shape[1]
 
     # Ajustar el tamaño de la imagen más pequeña
@@ -207,6 +219,7 @@ def add_padding(image, diff, axis):
     Returns:
         np.ndarray: Imagen con relleno agregado.
     """
+    # Crear matrices de relleno en el inicio y final de la imagen
     padding_start = np.zeros(
         (
             *[image.shape[i] if i != axis else math.ceil(diff / 2) for i in
@@ -220,6 +233,8 @@ def add_padding(image, diff, axis):
               range(len(image.shape) - 1)], 4
         )
     )
+    # Concatenar matrices de relleno y la imagen original a lo largo del eje
+    # especificado
     return np.concatenate((padding_start, image, padding_end), axis=axis)
 
 
