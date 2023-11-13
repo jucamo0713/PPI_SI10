@@ -1,4 +1,4 @@
-# Librerías nativas de python
+# Librerías nativas de Python
 import math
 from io import BytesIO
 
@@ -134,14 +134,10 @@ def combine_images_horizontal(image1, image2):
 
     # Ajustar el tamaño de la imagen más pequeña
     if diff > 0:
-        relleno1 = np.zeros((math.ceil(diff / 2), image2.shape[1], 4))
-        relleno2 = np.zeros((math.floor(diff / 2), image2.shape[1], 4))
-        image2 = np.vstack((relleno1, image2, relleno2))
+        image2 = add_padding(image2, diff, 0)
     elif diff < 0:
         diff = -diff
-        relleno1 = np.zeros((math.ceil(diff / 2), image1.shape[1], 4))
-        relleno2 = np.zeros((math.floor(diff / 2), image1.shape[1], 4))
-        image1 = np.vstack((relleno1, image1, relleno2))
+        image1 = add_padding(image2, diff, 0)
 
     # Concatenar imágenes horizontalmente
     collage = np.hstack((image1, image2))
@@ -164,14 +160,10 @@ def combine_images_vertical(image1, image2):
 
     # Ajustar el tamaño de la imagen más pequeña
     if diff > 0:
-        relleno1 = np.zeros((image2.shape[0], math.ceil(diff / 2), 4))
-        relleno2 = np.zeros((image2.shape[0], math.floor(diff / 2), 4))
-        image2 = np.hstack((relleno1, image2, relleno2))
+        image2 = add_padding(image2, diff, 1)
     elif diff < 0:
         diff = -diff
-        relleno1 = np.zeros((image1.shape[0], math.ceil(diff / 2), 4))
-        relleno2 = np.zeros((image1.shape[0], math.floor(diff / 2), 4))
-        image1 = np.hstack((relleno1, image1, relleno2))
+        image1 = add_padding(image1, diff, 1)
 
     # Concatenar imágenes verticalmente
     collage = np.vstack((image1, image2))
@@ -195,6 +187,34 @@ def equations(vars, proportion, area):
     eq1 = x / y - proportion
     eq2 = x * y - area
     return [eq1, eq2]
+
+
+def add_padding(image, diff, axis):
+    """
+    Añade relleno a la imagen según la dirección y el lado especificados.
+
+    Args:
+        image (np.ndarray): Imagen a la que se le agregará el relleno.
+        diff (int): Diferencia en tamaño con la otra imagen.
+        axis (int): Eje a lo largo del cual se agrega el relleno.
+
+    Returns:
+        np.ndarray: Imagen con relleno agregado.
+    """
+    padding_start = np.zeros(
+        (
+            *[image.shape[i] if i != axis else math.ceil(diff / 2) for i in
+              range(len(image.shape) - 1)], 4
+        )
+    )
+
+    padding_end = np.zeros(
+        (
+            *[image.shape[i] if i != axis else math.floor(diff / 2) for i in
+              range(len(image.shape) - 1)], 4
+        )
+    )
+    return np.concatenate((padding_start, image, padding_end), axis=axis)
 
 
 if __name__ == "__main__":
