@@ -11,6 +11,7 @@ from scipy.optimize import fsolve
 from skimage.util import img_as_ubyte
 
 
+# Definir la función principal
 def main():
     """
     Función principal que muestra la interfaz de usuario para crear collages.
@@ -64,6 +65,7 @@ def main():
                                file_name='collage.png', )
 
 
+# Función para generar el collage
 def generate_collage(images, fondo_color):
     """
     Genera un collage a partir de una lista de imágenes y un color de fondo.
@@ -123,10 +125,11 @@ def generate_collage(images, fondo_color):
     hex_color = fondo_color.lstrip('#')
 
     # Convertir el valor hexadecimal a RGB
-    rgb_color = tuple(int(hex_color[i:i + 2], 16) / 255 for i in (0, 2, 4))
+    rgb_color = list(int(hex_color[i:i + 2], 16) / 255 for i in (0, 2, 4))
 
     # Crear un fondo del mismo tamaño que la imagen original
-    fondo = np.ones((collage.shape[0], collage.shape[1], 4)) * [*rgb_color, 1]
+    fondo = (np.ones((collage.shape[0], collage.shape[1], collage.shape[
+        2]))) * ([*rgb_color, 1] if collage.shape[2] == 4 else rgb_color)
 
     # Reemplazar píxeles negros con el fondo
     collage = np.where(collage[:, :, :3] == 0, fondo[:, :, :3],
@@ -135,6 +138,7 @@ def generate_collage(images, fondo_color):
     return np.clip(collage, 0., 1.)
 
 
+# Funciones para combinar imágenes horizontal y verticalmente
 def combine_images_horizontal(image1, image2):
     """
     Combina dos imágenes horizontalmente.
@@ -189,6 +193,7 @@ def combine_images_vertical(image1, image2):
     return collage
 
 
+# Función para las ecuaciones utilizadas en el redimensionamiento
 def equations(vars, proportion, area):
     """
     Ecuaciones utilizadas para calcular el tamaño de las imágenes.
@@ -207,6 +212,7 @@ def equations(vars, proportion, area):
     return [eq1, eq2]
 
 
+# Función para agregar relleno a una imagen
 def add_padding(image, diff, axis):
     """
     Añade relleno a la imagen según la dirección y el lado especificados.
@@ -221,16 +227,16 @@ def add_padding(image, diff, axis):
     """
     # Crear matrices de relleno en el inicio y final de la imagen
     padding_start = np.zeros(
-        (
-            *[image.shape[i] if i != axis else math.ceil(diff / 2) for i in
-              range(len(image.shape) - 1)], 4
+        tuple(
+            [image.shape[i] if i != axis else math.ceil(diff / 2) for i in
+             range(len(image.shape))]
         )
     )
 
     padding_end = np.zeros(
-        (
-            *[image.shape[i] if i != axis else math.floor(diff / 2) for i in
-              range(len(image.shape) - 1)], 4
+        tuple(
+            [image.shape[i] if i != axis else math.floor(diff / 2) for i in
+             range(len(image.shape))]
         )
     )
     # Concatenar matrices de relleno y la imagen original a lo largo del eje
@@ -238,5 +244,6 @@ def add_padding(image, diff, axis):
     return np.concatenate((padding_start, image, padding_end), axis=axis)
 
 
+# Verificar si el script se está ejecutando como un programa independiente
 if __name__ == "__main__":
     main()
